@@ -1,0 +1,170 @@
+<div class="step-text">
+<h5 id="description">Description</h5>
+<p>We can save recipes, and there's no need to worry about losing important information. This is a big step up in this project. Now, we will improve the project by adding new functionality. Some changes in the recipe structure are also required.</p>
+<p>You've been improving this project and made a lot of changes. Sometimes, an ingredient may occur in 4 or 5 recipes, but you need only one. In these cases, it is important to find out what the creator of the recipe thinks about the recipe. To do this, we will add a new <code class="language-json">description</code> field to the structure of the recipe. It is also desirable that the directions of the recipe are explicitly divided into steps. To show the individual steps in the <code class="language-json">directions</code>, let's change the field type.</p>
+<p>The new structure of a recipe includes the same 4 fields (but the type of <code class="language-json">directions</code> is now different), plus a new field called <code class="language-json">description</code>. Here's an example of the new structure:</p>
+<pre><code class="language-json">{
+    "id": 1,
+    "title": "Cranberry Ginger Tea", 
+    "description": "Ginger tea is a warming drink for cool weather, ...",
+    "directions": [
+                    "In a medium sized bowl, pour boiling water over ginger and cranberries.",
+                    "Cover and let stand 20 minutes.",
+                    "Strain, add nutmeg and cranberry juice and stir.",
+                    "Serve warm or chilled over ice cubes. Garnish with mint."
+                  ],                   
+                    
+    "ingredients": 
+      [ 
+        { "title": "water", "measure": "cup", "amount": 2 }, 
+        { "title": "ginger", "measure": "cup", "amount": 0.5 }, 
+        { "title": "cranberries", "measure": "cup", "amount": 0.5 },
+        { "title": "nutmeg", "measure": "pinch", "amount": "1" },
+        { "title": "cranberry juice", "measure": "cup", "amount": 0.5 }, 
+        { "title": "mint sprigs", "measure": "each", "amount": 2 } 
+      ]
+}
+</code></pre>
+<p>Sometimes, there are enough ingredients for several recipes but not enough time, and you want to limit yourself to a smaller number of directions in the recipe. Let's add the ability to filter recipes by the number of directions in them. You will also need a new endpoint that will allow updating a recipe by the recipe <code class="language-json">id</code>.</p>
+<h5 id="theory">Theory</h5>
+<p>If you are using a database model, you will have to make minimal changes. You can store an array in just one line (with delimiters), and you can use the <a href="https://docs.sqlalchemy.org/en/14/orm/extensions/hybrid.html" rel="noopener noreferrer nofollow" target="_blank">hybrid properties</a> to represent it in the model.</p>
+<pre><code class="language-python">class Recipe(db.Model):
+    # other columns.....
+    _directions = db.Column(db.String(500), nullable=False)
+
+    @hybrid_property
+    def directions(self):
+        return str(self._directions).split('|')
+</code></pre>
+<p>This is a very interesting function, because only a string is stored in the database, and when you access the desired property, the answer is returned in the form we want. But with this approach, the data must be stored in the proper form at once. This is one possible approach, but not the only one. To learn more about storing lists in the database, read this <a href="http://frankvalcarcel.com/blog/conveniently-storing-lists-in-database/" rel="noopener noreferrer nofollow" target="_blank">article</a> by Frankvalcarcel.</p>
+<h5 id="objectives">Objectives</h5>
+<p>The service should support the same endpoints as in the previous stage:</p>
+<ul>
+<li><code class="language-json">POST /api/recipe/new</code> receives a recipe as a JSON object and returns a JSON object with one <code class="language-json">id</code> field;</li>
+<li><code class="language-json">GET /api/recipe/{id}</code> returns a recipe with the specified <code class="language-json">id</code> as a JSON object;</li>
+<li><code class="language-json">GET /api/recipe?ingredients=ingredient1|ingredient2|...|ingredientN</code> r returns a list of json objects representing recipes for which the specified ingredients are sufficient. Add a new parameter for this endpoint: <code class="language-json">max_directions</code>. It shows the maximum number of directions in the recipe. If there're no recipes, the route should return <code class="language-json">{"error" : "No recipe here yet"}</code>. The route should return an empty JSON list <code class="language-json">[]</code> if no recipes were found by these conditions. If more than one recipe is received, sort the results by <code class="language-json">title</code> in descending order, read more about sorting (order by) <a href="https://riptutorial.com/sqlalchemy/example/12146/order-by" rel="noopener noreferrer nofollow" target="_blank">here</a>.</li>
+<li><code class="language-json">DELETE /api/recipe/{id}</code> deletes a recipe with a specified <code class="language-json">{id}</code>.</li>
+</ul>
+<p>And a new endpoint:</p>
+<ul>
+<li><code class="language-json">PUT /api/recipe/{id}</code> receives a recipe as a JSON object and updates a recipe with a specified <code class="language-json">id</code>. The server should return the <code class="language-json">204 (No Content)</code> status code. If a recipe with the specified <code class="language-json">id</code> does not exist, return <code class="language-json">404 (Not found)</code>. The server should respond with <code class="language-json">400 (Bad Request)</code> if a recipe doesn't follow the restrictions: all fields are required, string fields can't be blank, arrays should have at least one item.</li>
+</ul>
+<p>A new <code class="language-json">description</code> field should be added to the recipe table.</p>
+<p>Also note that, as in the previous step, the database must be re-created if it is missing.</p>
+<h5 id="examples">Examples</h5>
+<p><strong>Example 1: </strong><em>a POST <code class="language-json">/api/recipe/new</code> request with the following body</em></p>
+<pre><code class="language-json">{
+    "title": "Cranberry Ginger Tea", 
+    "description": "Ginger tea is a warming drink for cool weather, ...",
+    "directions": [
+                    "In a medium sized bowl, pour boiling water over ginger and cranberries.",
+                    "Cover and let stand 20 minutes.",
+                    "Strain, add nutmeg and cranberry juice and stir.",
+                    "Serve warm or chilled over ice cubes. Garnish with mint."
+                  ],                   
+                    
+    "ingredients": 
+      [ 
+        { "title": "water", "measure": "cup", "amount": 2 }, 
+        { "title": "ginger", "measure": "cup", "amount": 0.5 }, 
+        { "title": "cranberries", "measure": "cup", "amount": 0.5 },
+        { "title": "nutmeg", "measure": "pinch", "amount": "1" },
+        { "title": "cranberry juice", "measure": "cup", "amount": 0.5 }, 
+        { "title": "mint sprigs", "measure": "each", "amount": 2 } 
+      ]
+}
+</code></pre>
+<p><em>Response:</em></p>
+<pre><code class="language-json">{
+   "id": 1
+}</code></pre>
+<p><strong>Example 2: </strong><em>a </em><em>GET <code class="language-json">/api/recipe/1</code> request</em></p>
+<p><em>Response:</em></p>
+<pre><code class="language-json">{
+    "title": "Cranberry Ginger Tea", 
+    "description": "Ginger tea is a warming drink for cool weather, ...",
+    "directions": [
+                    "In a medium sized bowl, pour boiling water over ginger and cranberries.",
+                    "Cover and let stand 20 minutes.",
+                    "Strain, add nutmeg and cranberry juice and stir.",
+                    "Serve warm or chilled over ice cubes. Garnish with mint."
+                  ],                   
+                    
+    "ingredients": 
+      [ 
+        { "title": "water", "measure": "cup", "amount": 2 }, 
+        { "title": "ginger", "measure": "cup", "amount": 0.5 }, 
+        { "title": "cranberries", "measure": "cup", "amount": 0.5 },
+        { "title": "nutmeg", "measure": "pinch", "amount": "1" },
+        { "title": "cranberry juice", "measure": "cup", "amount": 0.5 }, 
+        { "title": "mint sprigs", "measure": "each", "amount": 2 } 
+      ]
+}
+</code></pre>
+<p><strong>Example 3</strong>: <em>GET <code class="language-json">/api/recipe?ingredients=water|ginger|nutmeg|cranberries|nutmeg|cranberry juice|mint sprigs</code> request</em></p>
+<p><em>Response:</em></p>
+<pre><code class="language-json">[
+  {
+    "id": 1,
+    "title": "Cranberry Ginger Tea", 
+    "description": "Ginger tea is a warming drink for cool weather, ...",
+    "directions": [
+                    "In a medium sized bowl, pour boiling water over ginger and cranberries.",
+                    "Cover and let stand 20 minutes.",
+                    "Strain, add nutmeg and cranberry juice and stir.",
+                    "Serve warm or chilled over ice cubes. Garnish with mint."
+                  ],                   
+                    
+    "ingredients": 
+      [ 
+        { "title": "water", "measure": "cup", "amount": 2 }, 
+        { "title": "ginger", "measure": "cup", "amount": 0.5 }, 
+        { "title": "cranberries", "measure": "cup", "amount": 0.5 },
+        { "title": "nutmeg", "measure": "pinch", "amount": "1" },
+        { "title": "cranberry juice", "measure": "cup", "amount": 0.5 }, 
+        { "title": "mint sprigs", "measure": "each", "amount": 2 }
+      ]
+  }
+]</code></pre>
+<p><strong>Example 4</strong>: <em>GET <code class="language-json">/api/recipe?ingredients=water|ginger|nutmeg|cranberries|nutmeg|cranberry juice</code> request</em></p>
+<p><em>Response (an empty list):</em></p>
+<pre><code class="language-json">[
+
+]
+</code></pre>
+<p><strong>Example 5</strong>: <em>GET <code class="language-json">/api/recipe?ingredients=water|ginger|nutmeg|cranberries|nutmeg|cranberry juice|mint sprigs&amp;max_directions=2</code> request</em></p>
+<p><em>Response:</em></p>
+<pre><code class="language-json">[
+
+]
+</code></pre>
+<p><strong>Example 6: </strong><em>a PUT <code class="language-json">/api/recipe/1</code> request with the following body</em></p>
+<pre><code class="language-json">{
+    "title": "Cranberry Ginger Tea", 
+    "description": "Ginger tea is a warming drink for cool weather, ...",
+    "directions": [
+                    "In a medium sized bowl, pour boiling water over ginger and cranberries.",
+                    "Cover and let stand 20 minutes.",
+                    "Strain, add nutmeg and cranberry juice and stir."
+                  ],                   
+                    
+    "ingredients": 
+      [ 
+        { "title": "water", "measure": "cup", "amount": 2 }, 
+        { "title": "ginger", "measure": "cup", "amount": 0.5 }, 
+        { "title": "cranberries", "measure": "cup", "amount": 0.5 },
+        { "title": "nutmeg", "measure": "pinch", "amount": "1" },
+        { "title": "cranberry juice", "measure": "cup", "amount": 0.5 }
+      ]
+}
+</code></pre>
+<p><em>Response:</em></p>
+<p><code class="language-json">204 (No Content)</code></p>
+<p><strong>Example 7</strong>: <em>GET /<code class="language-json">api/recipe?ingredients=water 5|ginger|nutmeg|cranberries|nutmeg|cranberry juice|cranberry juice|mint sprigs&amp;max_directions=2</code></em></p>
+<p><em>Response (an empty list):</em></p>
+<pre><code class="language-json">[
+
+]
+</code></pre>
+<p>because there are more directions (3) in the recipe that the database has than we ask for (2)</p>
+</div>

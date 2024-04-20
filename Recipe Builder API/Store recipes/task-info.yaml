@@ -1,0 +1,482 @@
+type: edu
+files:
+  - name: app.py
+    visible: true
+    text: |
+      from flask import Flask
+      import sys
+      
+      app = Flask(__name__)
+      
+      # write your code here
+      
+      # don't change the following way to run flask:
+      if __name__ == '__main__':
+          if len(sys.argv) > 1:
+              arg_host, arg_port = sys.argv[1].split(':')
+              app.run(host=arg_host, port=arg_port)
+          else:
+              app.run()
+    learner_created: false
+  - name: test/__init__.py
+    visible: false
+    learner_created: false
+  - name: test/tests.py
+    visible: false
+    text: "import asyncio\nimport copy\nimport os\nimport sqlite3\nfrom hstest import\
+    \ FlaskTest, CheckResult, WrongAnswer\nfrom hstest import dynamic_test\nfrom hstest.dynamic.security.exit_handler\
+    \ import ExitHandler\nimport xml.etree.ElementTree as ET\nimport json\nfrom pip._vendor\
+    \ import requests\nfrom collections import Counter\n\nclass Ingredient:\n    title:\
+    \ str\n    amount: float\n    measure: str\n    def __eq__(self, other):\n   \
+    \     if isinstance(other, Ingredient) == False:\n            return False\n \
+    \       if self.title != other.title or self.amount != other.amount or self.measure\
+    \ != other.measure:\n            return False\n        else:\n            return\
+    \ True\nclass Recipe_info:\n    title = ''\n    ingredients = []\n    directions\
+    \ = ''\n    def __str__(self):\n        return self.to_json()\n\n    def from_json(self,\
+    \ recipe: str):\n        recipe_json = json.loads(recipe)\n        self.title\
+    \ = recipe_json['title']\n        self.directions = recipe_json['directions']\n\
+    \        self.ingredients = []\n        for ingredient in recipe_json['ingredients']:\n\
+    \            i = Ingredient()\n            i.title = ingredient['title']\n   \
+    \         i.amount = ingredient['amount']\n            i.measure = ingredient['measure']\n\
+    \            self.ingredients.append(i)\n\n    def from_other_recipe(self, recipe):\n\
+    \        copy_other = copy.deepcopy(recipe)\n        self.title = copy_other.title\n\
+    \        self.directions = copy_other.directions\n        self.ingredients = copy_other.ingredients\n\
+    \n    def __init__(self, recipe=None):\n        if recipe is None:\n         \
+    \   return\n        if isinstance(recipe, str):\n            self.from_json(recipe)\n\
+    \        elif isinstance(recipe, Recipe_info):\n            self.from_other_recipe(recipe)\n\
+    \n    def __eq__(self, other):\n        if isinstance(other, Recipe_info):\n \
+    \           return False\n        if self.title != other.title:\n            return\
+    \ False\n        if self.directions != other.directions:\n            return False\n\
+    \        if len(self.ingredients) != len(other.ingredients):\n            return\
+    \ False\n        for ingredient1 in self.ingredients:\n            flag = True\n\
+    \            for ingredient2 in other.ingredients:\n                if ingredient1.title\
+    \ == ingredient2.title and ingredient1.measure == ingredient2.measure and ingredient1.amount\
+    \ == ingredient2.amount:\n                    flag = False\n                 \
+    \   break\n            if flag:\n                return False\n        return\
+    \ True\n\n    def to_json(self):\n        recipe_dict = copy.deepcopy(self).__dict__\n\
+    \        recipe_dict['ingredient'] = []\n        for ingredient in self.ingredients:\n\
+    \            ingredient.amount = float(ingredient.amount)\n            recipe_dict['ingredient'].append((ingredient.__dict__))\n\
+    \        del recipe_dict['ingredients']\n        recipe_dict['ingredients'] =\
+    \ recipe_dict.pop('ingredient')\n        jsonStr = json.dumps(recipe_dict)\n \
+    \       return jsonStr\n    def get_ingredients_url_parameters(self):\n      \
+    \  return \"|\".join([ingredient.title for ingredient in self.ingredients])\n\n\
+    class Recipe_info_with_id(Recipe_info) :\n    id: int\n    def __str__(self, without_id=True):\n\
+    \        if without_id:\n            return self.to_json_without_id()\n      \
+    \  else:\n            return super.__str__()\n    def from_other_recipe(self,\
+    \ recipe):\n        copy_other = copy.deepcopy(recipe)\n        self.title = copy_other.title\n\
+    \        self.directions = copy_other.directions\n        self.ingredients = copy_other.ingredients\n\
+    \    def from_json(self, recipe: str):\n        recipe_json = json.loads(recipe)\n\
+    \        self.title = recipe_json['title']\n        self.directions = recipe_json['directions']\n\
+    \        self.ingredients = []\n        for ingredient in recipe_json['ingredients']:\n\
+    \            i = Ingredient()\n            i.title = ingredient['title']\n   \
+    \         i.amount = ingredient['amount']\n            i.measure = ingredient['measure']\n\
+    \            self.ingredients.append(i)\n    def __init__(self, other=None, id=None):\n\
+    \        if other is None:\n            return\n        if isinstance(other, Recipe_info):\n\
+    \            self.from_other_recipe(other)\n            self.id = id\n       \
+    \ if isinstance(other, Recipe_info_with_id):\n            self.from_other_recipe(other)\n\
+    \            self.id = other.id\n        elif isinstance(other, str):\n      \
+    \      recipe_json = json.loads(other)\n            self.from_json(other)\n  \
+    \          try:\n                self.id = recipe_json['id']\n            except:\n\
+    \                if id is not None:\n                    self.id = id\n\n    def\
+    \ to_json(self):\n        recipe_dict = copy.deepcopy(self).__dict__\n       \
+    \ recipe_dict['ingredient'] = []\n        for ingredient in self.ingredients:\n\
+    \            ingredient.amount = float(ingredient.amount)\n            recipe_dict['ingredient'].append((ingredient.__dict__))\n\
+    \        del recipe_dict['ingredients']\n        recipe_dict['ingredients'] =\
+    \ recipe_dict.pop('ingredient')\n        jsonStr = json.dumps(recipe_dict)\n \
+    \       return jsonStr\n    def to_json_without_id(self):\n        recipe_dict\
+    \ = copy.deepcopy(self).__dict__\n        recipe_dict['ingredient'] = []\n   \
+    \     for ingredient in self.ingredients:\n            ingredient.amount = float(ingredient.amount)\n\
+    \            recipe_dict['ingredient'].append((ingredient.__dict__))\n       \
+    \ del recipe_dict['ingredients']\n        del recipe_dict['id']\n        recipe_dict['ingredients']\
+    \ = recipe_dict.pop('ingredient')\n        jsonStr = json.dumps(recipe_dict)\n\
+    \        return jsonStr\n    def get_ingredients_url_parameters(self):\n     \
+    \   return \"|\".join([ingredient.title for ingredient in self.ingredients])\n\
+    \ndef recipes_from_xml():\n    list_recipes = []\n    root_el = ET.fromstring('<recipes><recipe\
+    \ title=\"All-Day-Long Crockpot Beef\" directions=\" Cut beef roast into serving-sized\
+    \ portions.   Use more beef if you need more than 6 servings.   Brown beef in\
+    \ a bit of vegetable oil, although you can skip this step if rushed for time.\
+    \ Slice onion and separate into rings.   Dice the peeled carrots, dice the celery\
+    \ and slice the peppers into thin strips or circles.   Place these into bottom\
+    \ of crockpot.   Sprinkle the beef pieces with fresh ground black pepper, minced\
+    \ garlic and the onion soup mix.   Place on top of the vegetables. Mix the steak\
+    \ sauce and worcestershire sauce in a small  Pour this over the meat. Turn the\
+    \ crockpot to High for 30 minutes, or, if you\\'re in a hurry, skip this step.\
+    \   Turn to Low, cover and cook for 7 to 9 hours. Keep the crockpot covered as\
+    \ much as possible throughout cooking time.   A crockpot can be used to cook this\
+    \ type of meal for a varied amount of time, depending on your schedule.  It is\
+    \ not important that you take the meat and vegetables out at a specific amount\
+    \ of time.  One or two hours either way usually makes no difference. When ready\
+    \ to serve, dip meat and vegetables out of pot with a slotted spoon.  Use the\
+    \ liquid as is or turn crockpot to High and thicken liquid with a little \"><ingredients><ingredient\
+    \ amount=\"907.2\" measure=\"g\">beef</ingredient><ingredient amount=\"10\" measure=\"\
+    ml\">black pepper</ingredient><ingredient amount=\"2\" measure=\"each\">garlic</ingredient><ingredient\
+    \ amount=\"2\" measure=\"each\">onion soup mix</ingredient><ingredient amount=\"\
+    10\" measure=\"ml\">worcestershire sauce</ingredient><ingredient amount=\"5\"\
+    \ measure=\"ml\">steak sauce</ingredient><ingredient amount=\"3\" measure=\"each\"\
+    >carrots</ingredient><ingredient amount=\"2\" measure=\"each\">celery</ingredient><ingredient\
+    \ amount=\"1\" measure=\"each\">sweet red bell peppers</ingredient><ingredient\
+    \ amount=\"1\" measure=\"each\">onions</ingredient><ingredient amount=\"118\"\
+    \ measure=\"ml\">water</ingredient><ingredient amount=\"118\" measure=\"ml\">tomato\
+    \ juice</ingredient></ingredients></recipe><recipe title=\"All-Day-Long Potato\
+    \ Soup\" directions=\" Place the first six ingredients in your slow cooker and\
+    \ cook all day on the low setting. About &#189;  to one hour before serving; add\
+    \ milk and  Once the soup starts to thicken, it is ready to serve. This simple\
+    \ slow cooker potato soup from scratch is a mainstay in our family.  We frequently\
+    \ vary the recipe as follows: Stir in &#188; pound (125 g) of shredded cheese\
+    \ just prior to serving for cheese potato soup. A can of evaporated milk may be\
+    \ substituted for the regular milk. When serving, top with crispy  Combine cheese\
+    \ and bacon as noted in both variations above.\"><ingredients><ingredient amount=\"\
+    680.4\" measure=\"g\">potatoes</ingredient><ingredient amount=\"1\" measure=\"\
+    each\">onions</ingredient><ingredient amount=\"15\" measure=\"ml\">butter</ingredient><ingredient\
+    \ amount=\"1\" measure=\"each\">vegetable stock cubes</ingredient><ingredient\
+    \ amount=\"15\" measure=\"ml\">parsley leaves</ingredient><ingredient amount=\"\
+    710\" measure=\"ml\">water</ingredient><ingredient amount=\"237\" measure=\"ml\"\
+    >milk</ingredient><ingredient amount=\"59\" measure=\"ml\">all-purpose flour</ingredient></ingredients></recipe><recipe\
+    \ title=\"Good As Gold Chicken (Like Kfc\\'s and Boston\\'s)\" directions=\" Mix\
+    \ ingredients (except chicken) in a saucepan and warm just to melt honey. Arrange\
+    \ chicken breast-side-up in a square  Bake uncovered at 400 degrees about 35 to\
+    \ 40 minutes. Basting pieces without turning them, 3 or 4 times during baking.\
+    \ Immediately upon removing from oven, seal baking dish or pan tightly in foil\
+    \ and let stand 15 to 20 minutes before serving.\"><ingredients><ingredient amount=\"\
+    59\" measure=\"ml\">vegetable oil</ingredient><ingredient amount=\"15\" measure=\"\
+    ml\">honey</ingredient><ingredient amount=\"15\" measure=\"ml\">lime juice</ingredient><ingredient\
+    \ amount=\"1.3\" measure=\"ml\">paprika</ingredient><ingredient amount=\"1\" measure=\"\
+    x\">seasoned salt</ingredient><ingredient amount=\"4\" measure=\"each\">chicken\
+    \ breasts</ingredient></ingredients></recipe><recipe title=\"100% Parmesan Chicken\"\
+    \ directions=\" Heat  Dip chicken in margarine; coat with combined remaining ingredients.\
+    \ Place in prepared pan. Bake 20 to 25 minutes or until tender. Substitute &#8539;\
+    \ to &#188; teaspoon ground red pepper for black pepper.\"><ingredients><ingredient\
+    \ amount=\"6\" measure=\"each\">chicken breasts</ingredient><ingredient amount=\"\
+    30\" measure=\"ml\">butter</ingredient><ingredient amount=\"118\" measure=\"ml\"\
+    >Parmesan cheese</ingredient><ingredient amount=\"59\" measure=\"ml\">bread crumbs</ingredient><ingredient\
+    \ amount=\"5\" measure=\"ml\">oregano</ingredient><ingredient amount=\"5\" measure=\"\
+    ml\">parsley flakes</ingredient><ingredient amount=\"1.3\" measure=\"ml\">paprika</ingredient><ingredient\
+    \ amount=\"1.3\" measure=\"ml\">salt</ingredient><ingredient amount=\"1.3\" measure=\"\
+    ml\">black pepper</ingredient></ingredients></recipe><recipe title=\"10 Minute\
+    \ Sichuan/Szechuan Chicken\" directions=\" Cut chicken into cubes.  Lightly toss\
+    \ with cornstarch in bag to coat.  Heat oil in skillet or wok, medium-high heat.\
+    \ Stir-fry chicken and garlic until lightly browned.  Add soy sauce, vinegar,\
+    \ sugar and water. Cover and cook 3 minutes or until chicken is cooked through.\
+    \  Add green onions and cayenne; cook uncovered about 2 minutes longer.\"><ingredients><ingredient\
+    \ amount=\"4\" measure=\"each\">chicken breasts</ingredient><ingredient amount=\"\
+    23\" measure=\"ml\">vinegar</ingredient><ingredient amount=\"45\" measure=\"ml\"\
+    >cornstarch</ingredient><ingredient amount=\"5\" measure=\"ml\">sugar</ingredient><ingredient\
+    \ amount=\"15\" measure=\"ml\">vegetable oil</ingredient><ingredient amount=\"\
+    59\" measure=\"ml\">water</ingredient><ingredient amount=\"3\" measure=\"cloves\"\
+    >garlic</ingredient><ingredient amount=\"6\" measure=\"each\">scallions, spring\
+    \ or green onions</ingredient><ingredient amount=\"75\" measure=\"ml\">soy sauce,\
+    \ tamari</ingredient><ingredient amount=\"0.6\" measure=\"ml\">cayenne pepper</ingredient></ingredients></recipe></recipes>')\n\
+    \    for recipe_el in root_el:\n        recipe = Recipe_info()\n        recipe.title\
+    \ = recipe_el.attrib['title']\n        recipe.directions = recipe_el.attrib['directions']\n\
+    \        ingredients = recipe_el.find(\"ingredients\")\n        recipe.ingredients\
+    \ = []\n        for ingredient_el in ingredients:\n            ingredient = Ingredient()\n\
+    \            ingredient.title = ingredient_el.text\n            ingredient.amount\
+    \ = float(ingredient_el.attrib['amount'])\n            ingredient.measure = ingredient_el.attrib['measure']\n\
+    \            recipe.ingredients.append(ingredient)\n        list_recipes.append(recipe)\n\
+    \    return list_recipes\n\nclass FlaskProjectTest(FlaskTest):\n    source = 'app'\n\
+    \    list_recipes = []\n    list_added_recipes = []\n    recipe_name_table = \"\
+    \"\n    ingredient_name_table = \"\"\n    wrong_answers = \\\n        [\n    \
+    \        \"The database must contain a table with {} (named {} or {})\", #0\n\
+    \            \"{} route should return code 200, now code is {}\",  # 1\n     \
+    \       \"{}, {} key should be in the json response\",  # 2\n            \"{}\
+    \ response should not be empty\",  # 3\n            \"{} route should return '{}'\
+    \ if no recipes added, now '{}'\",  # 4\n            \"{} route should return\
+    \ '{}' If not enough ingredients, now '{}'\",  # 5\n            \"{} route should\
+    \ return json with {} keys, now {}\",  # 6\n            \"{} route should return\
+    \ correct json response, if recipe added, now response: '{}'\",  # 7\n       \
+    \     \"{} route, id added recipe must be a digit\",  # 8\n            \"{} route,\
+    \ id must not be static\",  # 9\n            \"{} route, should return 404 status\
+    \ code if recipe with id={} not added, now status code is {}\",  # 10\n      \
+    \      \"{} route should return a list of recipes, according to the list of specified\
+    \ ingredients, now number recipes is '{}', but expected '{}'\",            # 11\n\
+    \            \"{} route, {} from recipe should be '{}', now '{}'\",  # 12\n  \
+    \          \"{} route, the number of ingredients in the recipe does not correspond\
+    \ to the original, now {}, expected {}\",            # 13\n            \"{} route,\
+    \ one of the ingredients of the original recipe is not returned, title='{}', measure='{}',\
+    \ amount='{}'\",            # 14\n            \"{} route should return {} status\
+    \ code, if no recipe with specified id, now status code is '{}'\",  # 15\n   \
+    \         \"{} route should delete recipe and return {} status code, if recipe\
+    \ with specified id found, now status code is '{}'\",            # 16\n      \
+    \      \"Since the recipe(s) have already been added to the system, the output\
+    \ format should be a list of recipes []\",            # 17\n            \"{} route\
+    \ should return a list of recipes in json format, now the route returns a list\
+    \ of strings. Look at example #5\",            # 18\n            \"{} route should\
+    \ return a list of recipes in the correct format. See example #5\",  # 19\n  \
+    \          \"{} route should return a code of 400, if there is an attempt to add\
+    \ a recipe with empty '{}', now the code is {}\",  # 20\n            \"{}, {}\
+    \ key should not be in the json response\",  # 21\n            \"{} route should\
+    \ return recipe(s), with id(s) [{}], now [{}]\",  # 22\n        ]\n    connection_error\
+    \ = \"Could not establish a {} connection to {}.\"\n    links = \\\n    [\n  \
+    \      \"{}api/recipe\", #0\n        \"{}api/recipe?ingredients={}\", #1\n   \
+    \     \"{}api/recipe/new\", #2\n        \"{}api/recipe/{}\",  # 3\n    ]\n   \
+    \ strings = \\\n    [\n        \"No recipe here yet\", #0\n        \"No recipe\
+    \ for these ingredients\" #1\n    ]\n    json_responses = \\\n        [\n    \
+    \        {\"error\": strings[0]},\n            {\"error\": strings[1]}\n     \
+    \   ]\n\n    def my_init(self):\n        self.list_recipes = recipes_from_xml()\n\
+    \n    def __init__(self, source_name: str = ''):\n        super().__init__(source_name)\n\
+    \        self.my_init()\n\n    def check_recipes_str(self, recipes: list, content:\
+    \ str, recipe_added, enough_ingredients):\n        try:\n            print(\"\
+    content = \" + content)\n            recipes_dict = json.loads(content)\n    \
+    \    except:\n            raise WrongAnswer(self.wrong_answers[7].format(self.links[1].format(\"\
+    GET /\", \"...\"), content))\n        if recipe_added and enough_ingredients:\n\
+    \            if not content:\n                raise WrongAnswer(self.wrong_answers[3].format(self.links[1].format(\"\
+    GET /\", \"...\")))\n            if len(recipes) != len(recipes_dict):\n     \
+    \           raise WrongAnswer(self.wrong_answers[11].format(self.links[1].format(\"\
+    GET /\", \"...\"), len(recipes_dict),\n                                      \
+    \                          len(recipes), ))\n            if type(recipes_dict)\
+    \ != list:\n                raise WrongAnswer(self.wrong_answers[17])\n      \
+    \      for recipe in recipes_dict:\n                if type(recipe) == str:\n\
+    \                    raise WrongAnswer(self.wrong_answers[18].format(self.links[1].format(\"\
+    GET /\", \"...\")))\n                if type(recipe) != dict:\n              \
+    \      raise WrongAnswer(self.wrong_answers[19].format(self.links[1].format(\"\
+    GET /\", \"...\")))\n                if \"title\" not in recipe.keys():\n    \
+    \                raise WrongAnswer(self.wrong_answers[2].format(self.links[1].format(\"\
+    GET /\", \"...\"), \"title\"))\n                if \"directions\" not in recipe.keys():\n\
+    \                    raise WrongAnswer(self.wrong_answers[2].format(self.links[1].format(\"\
+    GET /\", \"...\"), \"directions\"))\n                if \"ingredients\" not in\
+    \ recipe.keys():\n                    raise WrongAnswer(self.wrong_answers[2].format(self.links[1].format(\"\
+    GET /\", \"...\"), \"ingredients\"))\n                if \"id\" not in recipe.keys():\n\
+    \                    raise WrongAnswer(self.wrong_answers[2].format(self.links[3].format(\"\
+    GET /\", \"id\"), \"id\"))\n\n                if len(recipe.keys()) > 4:\n   \
+    \                 raise WrongAnswer(\n                        self.wrong_answers[6].format(self.links[1].format(\"\
+    GET /\", \"...\"), 4, len(recipe.keys())))\n                #check recipes data\n\
+    \                flag_exist = False\n                for r in recipes:\n     \
+    \               if r.id == recipe['id']:\n                        flag_exist =\
+    \ True\n                        break\n                if flag_exist == False:\n\
+    \                    ids_needed = \" \"\n                    ids_exists = \" \"\
+    \n                    for rr in recipes:\n                        ids_needed +=\
+    \ str(rr.id)+\" \"\n                    for rr in recipes_dict:\n            \
+    \            ids_exists += str(rr['id'])+\" \"\n                    raise WrongAnswer(\n\
+    \                        self.wrong_answers[22].format(self.links[1].format(\"\
+    GET /\", \"...\"), ids_needed, ids_exists))\n\n        elif not recipe_added:\n\
+    \            if recipes_dict != self.json_responses[0]:\n                raise\
+    \ WrongAnswer(\n                    self.wrong_answers[4].format(self.links[1].format(\"\
+    GET /\", \"...\"), str(self.json_responses[0]),\n                            \
+    \                     content))\n        elif recipe_added and not enough_ingredients:\n\
+    \            if recipes_dict != self.json_responses[1]:\n                raise\
+    \ WrongAnswer(\n                    self.wrong_answers[5].format(self.links[1].format(\"\
+    GET /\", \"...\"), str(self.json_responses[1]),\n                            \
+    \                     content))\n\n    async def test_get_recipe_by_ingredients(self,\
+    \ recipes: list, recipe_added=True, enough_ingredients=True):\n        try:\n\
+    \            r = requests.get(self.links[1].format(self.get_url(), recipes[0].get_ingredients_url_parameters()))\n\
+    \        except requests.exceptions.ConnectionError as e:\n            raise WrongAnswer(self.connection_error.format(e.request.method,\
+    \ e.request.url.split('?')[0]))\n        if r.status_code != 200:\n          \
+    \  raise WrongAnswer(self.wrong_answers[1].format(self.links[1].format(\"GET /\"\
+    , \"...\"), r.status_code))\n        content = r.content.decode('UTF-8')\n   \
+    \     self.check_recipes_str(recipes, content, recipe_added, enough_ingredients)\n\
+    \n    def check_recipe_str_get_by_id(self, recipe: Recipe_info, content: str,\
+    \ id:int):\n        try:\n            recipe_dict = json.loads(content)\n    \
+    \    except:\n            raise WrongAnswer(self.wrong_answers[7].format(self.links[3].format(\"\
+    GET /\", id), content))\n        if not content:\n            raise WrongAnswer(self.wrong_answers[3].format(self.links[3].format(\"\
+    GET /\", id)))\n        if \"title\" not in recipe_dict.keys():\n            raise\
+    \ WrongAnswer(self.wrong_answers[2].format(self.links[3].format(\"GET /\", id),\
+    \ \"'title'\"))\n        if \"directions\" not in recipe_dict.keys():\n      \
+    \      raise WrongAnswer(self.wrong_answers[2].format(self.links[3].format(\"\
+    GET /\", id), \"'directions'\"))\n        if \"ingredients\" not in recipe_dict.keys():\n\
+    \            raise WrongAnswer(self.wrong_answers[2].format(self.links[3].format(\"\
+    GET /\", id), \"'ingredients'\"))\n        if \"id\" in recipe_dict.keys():\n\
+    \            raise WrongAnswer(self.wrong_answers[21].format(self.links[3].format(\"\
+    GET /\", id), \"'id'\"))\n        if len(recipe_dict.keys()) != 3:\n         \
+    \   raise WrongAnswer(\n                self.wrong_answers[6].format(self.links[3].format(\"\
+    GET /\", id), 3, len(recipe_dict.keys())))\n        if recipe.title != recipe_dict['title']:\n\
+    \            raise WrongAnswer(self.wrong_answers[12].format(self.links[3].format(\"\
+    GET /\", id), 'title', recipe.title, recipe_dict['title']))\n        if recipe.directions\
+    \ != recipe_dict['directions']:\n            raise WrongAnswer(self.wrong_answers[12].format(self.links[3].format(\"\
+    GET /\", id), 'directions', recipe.directions, recipe_dict['directions']))\n \
+    \       link = self.links[3].format(\"GET /\", id)\n        try:\n           \
+    \ if len(recipe.ingredients) != len(recipe_dict['ingredients']):\n           \
+    \     raise WrongAnswer(self.wrong_answers[13].format(link, len(recipe_dict['ingredients']),\
+    \ len(recipe.ingredients)))\n        except KeyError:\n            raise WrongAnswer(\"\
+    Make sure you added all the ingredients\")\n        self.check_ingredients(recipe.ingredients,\
+    \ recipe_dict['ingredients'], id)\n    def check_ingredients(self, recipe_ingredients:list,\
+    \ json_ingredients:list, id):\n        for ingredient_recipe in recipe_ingredients:\n\
+    \            flag_exists = False\n            for ingredient_json in json_ingredients:\n\
+    \                if ingredient_json['title'] == ingredient_recipe.title\\\n  \
+    \                      and ingredient_json['measure'] == ingredient_recipe.measure\\\
+    \n                        and str(ingredient_json['amount']) == str(ingredient_recipe.amount):\n\
+    \                    flag_exists = True\n                    break\n         \
+    \   if not flag_exists:\n                raise WrongAnswer(self.wrong_answers[14].format(self.links[3].format(\"\
+    GET /\", id), ingredient_recipe.title, ingredient_recipe.measure, ingredient_recipe.amount))\n\
+    \n    async def test_del_recipe_by_id(self, id:int, recipe_added=False, recipe:\
+    \ Recipe_info=None):\n        try:\n            r = requests.delete(self.links[3].format(self.get_url(),\
+    \ id))\n        except requests.exceptions.ConnectionError as e:\n           \
+    \ raise WrongAnswer(self.connection_error.format(e.request.method, e.request.url.split('?')[0]))\n\
+    \        if not recipe_added:\n            if r.status_code != 404:\n        \
+    \        raise WrongAnswer(self.wrong_answers[15].format(self.links[3].format(\"\
+    DELETE /\", id), 404, r.status_code))\n        else:\n            if r.status_code\
+    \ != 204:\n                raise WrongAnswer(self.wrong_answers[16].format(self.links[3].format(\"\
+    DELETE /\", id), 204, r.status_code))\n            deleted_recipe=None\n     \
+    \       for r in self.list_added_recipes:\n                if r.id==id:\n    \
+    \                deleted_recipe = r\n                    break\n            self.list_added_recipes.remove(r)\n\
+    \    async def test_get_recipe_by_id(self, id:int, recipe_added=False, recipe:\
+    \ Recipe_info=None):\n        try:\n            r = requests.get(self.links[3].format(self.get_url(),\
+    \ id))\n        except requests.exceptions.ConnectionError as e:\n           \
+    \ raise WrongAnswer(self.connection_error.format(e.request.method, e.request.url.split('?')[0]))\n\
+    \        if not recipe_added:\n            if r.status_code != 404:\n        \
+    \        raise WrongAnswer(self.wrong_answers[10].format(self.links[3].format(self.get_url(),\
+    \ id), id, r.status_code))\n        else:\n            content = r.content.decode(\"\
+    UTF-8\")\n            self.check_recipe_str_get_by_id(recipe, content, id)\n \
+    \   def check_post_recipe_respond(self, content):\n        if not content:\n \
+    \           raise WrongAnswer(self.wrong_answers[7].format(self.links[2].format(\"\
+    POST /\", ), content))\n        try:\n            json_dict = json.loads(content)\n\
+    \        except:\n            raise WrongAnswer(self.wrong_answers[7].format(self.links[2].format(\"\
+    POST /\"), content))\n        if \"id\" not in json_dict.keys():\n           \
+    \ raise WrongAnswer(self.wrong_answers[2].format(self.links[2].format(\"POST /\"\
+    ), \"id\"))\n        if len(json_dict.keys()) > 1:\n            raise WrongAnswer(self.wrong_answers[6].format(self.links[1].format(\"\
+    GET /\", \"...\"), len(json_dict.keys())))\n        if not str(json_dict['id']).isdigit()\
+    \ and str(int(json_dict['id'])) == str(json_dict['id']):\n            raise WrongAnswer(self.wrong_answers[8].format(self.links[2].format(\"\
+    POST /\")))\n        if len(self.list_recipes) != 0:\n            for recipe in\
+    \ self.list_added_recipes:\n                if recipe.id == int(json_dict['id']):\n\
+    \                    raise WrongAnswer(self.wrong_answers[9].format(self.links[2].format(\"\
+    POST /\")))\n    def check_exist_table(self, table_name:str):\n        con = sqlite3.connect('recipes.db')\n\
+    \        cursor = con.cursor()\n        sql_query = \"\"\"SELECT count(name) FROM\
+    \ sqlite_master  \n                  WHERE type='table' and name='{}';\"\"\"\n\
+    \        cursor.execute(sql_query.format(table_name))\n        res = cursor.fetchall()\n\
+    \        if res[0][0] == 1:\n            con.close()\n            return True\n\
+    \        else:\n            con.close()\n            return False\n    def check_table_columns(self,\
+    \ table_name, list_columns):\n        con = sqlite3.connect('recipes.db')\n  \
+    \      cursor = con.cursor()\n        sql_query = \"SELECT name FROM PRAGMA_TABLE_INFO('{}')\"\
+    \n        cursor.execute(sql_query.format(table_name))\n        res = cursor.fetchall()\n\
+    \        list_column_names = []\n        for tuple in res:\n            name =\
+    \ tuple[0]\n            list_column_names.append(name)\n        for name in list_columns:\n\
+    \            if name not in list_column_names:\n                raise WrongAnswer(f\"\
+    Table '{table_name}' must contain a column named '{name}'\")\n\n\n    async def\
+    \ test_database_structure(self):\n        if not os.path.exists(\"recipes.db\"\
+    ):\n            raise WrongAnswer(\"Strange, the database file is not involved.\
+    \ You may not have named the database correctly (recipes.db).\")\n        #check\
+    \ data base structure\n        if self.check_exist_table(\"recipe\"):\n      \
+    \      self.recipe_name_table = \"recipe\"\n        elif self.check_exist_table(\"\
+    recipes\"):\n            self.recipe_name_table = \"recipes\"\n        else:\n\
+    \            raise WrongAnswer(self.wrong_answers[0].format(\"recipes\", \"recipe\"\
+    , \"recipes\"))\n        if self.check_exist_table(\"ingredient\"):\n        \
+    \    self.ingredient_name_table = \"ingredient\"\n        elif self.check_exist_table(\"\
+    ingredients\"):\n            self.ingredient_name_table = \"ingredients\"\n  \
+    \      else:\n            raise WrongAnswer(self.wrong_answers[0].format(\"ingredients\"\
+    , \"ingredient\", \"ingredients\"))\n        #table columns\n        self.check_table_columns(self.recipe_name_table,\
+    \ ['id', 'title', 'directions'])\n        self.check_table_columns(self.ingredient_name_table,\
+    \ ['id', 'title', 'measure', 'amount'])\n        await self.check_data_base(self.list_added_recipes)\n\
+    \n    async def check_data_base(self, list_recipes):\n        con = sqlite3.connect('recipes.db')\n\
+    \        cursor = con.cursor()\n        sql_query = \"\"\"SELECT count(*) FROM\
+    \ {}\"\"\"\n        if len(list_recipes) == 0:\n            cursor.execute(sql_query.format(self.recipe_name_table))\n\
+    \            res = cursor.fetchall()\n            if res[0][0] != 0:\n       \
+    \         raise WrongAnswer(\"The database should now be empty and should not\
+    \ contain any recipes. Perhaps your database is open in another program and the\
+    \ tests cannot remove it\")\n            cursor.execute(sql_query.format(self.ingredient_name_table))\n\
+    \            res = cursor.fetchall()\n            if res[0][0] != 0:\n       \
+    \         raise WrongAnswer(\"Now the database should be empty and it should not\
+    \ store recipe ingredients\")\n        else:\n            cursor.execute(sql_query.format(self.recipe_name_table))\n\
+    \            res = cursor.fetchall()\n            if res[0][0] != len(list_recipes):\n\
+    \                raise WrongAnswer(\"Now the number of recipes is {}, expected\
+    \ {}\".format(res[0][0], len(list_recipes)))\n            cursor.execute(sql_query.format(self.ingredient_name_table))\n\
+    \            res = cursor.fetchall()\n            if res[0][0] == 0:\n       \
+    \         raise WrongAnswer(\"Recipe ingredients are not stored in the database\"\
+    )\n            sql_query = f\"SELECT * FROM {self.ingredient_name_table};\"\n\
+    \            cursor.execute(sql_query)\n            res = cursor.fetchall()\n\
+    \            list_ingredients = []\n            for tup in res:\n            \
+    \    title = tup[1]\n                measure = tup[2]\n                amount\
+    \ = tup[3]\n                ing = Ingredient()\n                ing.title = title\n\
+    \                ing.amount = amount\n                ing.measure = measure\n\
+    \                list_ingredients.append(ing)\n            for i in list_ingredients:\n\
+    \                if list_ingredients.count(i) > 1:\n                    raise\
+    \ WrongAnswer(\"Ingredients in the database must be stored in a single copy, duplicates\
+    \ take up a lot of space. The ingredients are now kept in multiple copies\")\n\
+    \            for r in list_recipes:\n                for ingredient in r.ingredients:\n\
+    \                    if ingredient not in list_ingredients:\n                \
+    \        raise  WrongAnswer(f\"Ingredient {ingredient.title} was not found in\
+    \ the database, although it was in a previously added recipe\")\n            sql_query\
+    \ = f\"SELECT title FROM {self.recipe_name_table};\"\n            cursor.execute(sql_query)\n\
+    \            res = cursor.fetchall()\n            list_names = []\n          \
+    \  for tup in res:\n                name = tup[0]\n                list_names.append(name)\n\
+    \            for r in list_recipes:\n                if r.title not in list_names:\n\
+    \                    raise WrongAnswer(f\"No recipe with the title {r.title} is\
+    \ found in the database, but expected\")\n        con.close()\n\n    async def\
+    \ test_post_recipe(self, recipe:Recipe_info):\n        try:\n            r = requests.post(self.links[2].format(self.get_url()),\
+    \ json=str(recipe))\n        except requests.exceptions.ConnectionError as e:\n\
+    \            raise WrongAnswer(self.connection_error.format(e.request.method,\
+    \ e.request.url.split('?')[0]))\n        if r.status_code != 200:\n          \
+    \  raise WrongAnswer(self.wrong_answers[1].format(self.links[0].format(\"POST\
+    \ /\"), r.status_code))\n        content = r.content.decode(\"UTF-8\")\n     \
+    \   self.check_post_recipe_respond(content)\n        json_dict = json.loads(content)\n\
+    \        self.list_added_recipes.append(Recipe_info_with_id(recipe, int(json_dict['id'])))\n\
+    \n    async def test_post_invalid_recipe(self, recipe:Recipe_info):\n        jsonDict\
+    \ = json.loads(str(recipe))\n        jsonDict[\"title\"] = \"\"\n        try:\n\
+    \            r = requests.post(self.links[2].format(self.get_url()), json=json.dumps(jsonDict))\n\
+    \        except requests.exceptions.ConnectionError as e:\n            raise WrongAnswer(self.connection_error.format(e.request.method,\
+    \ e.request.url.split('?')[0]))\n        if r.status_code != 400:\n          \
+    \  raise WrongAnswer(self.wrong_answers[20].format(self.links[0].format(\"POST\
+    \ /\"), 'title', r.status_code))\n\n        jsonDict = json.loads(str(recipe))\n\
+    \        jsonDict[\"directions\"] = \"\"\n        try:\n            r = requests.post(self.links[2].format(self.get_url()),\
+    \ json=json.dumps(jsonDict))\n        except requests.exceptions.ConnectionError\
+    \ as e:\n            raise WrongAnswer(self.connection_error.format(e.request.method,\
+    \ e.request.url.split('?')[0]))\n        if r.status_code != 400:\n          \
+    \  raise WrongAnswer(self.wrong_answers[20].format(self.links[0].format(\"POST\
+    \ /\"), 'directions', r.status_code))\n\n        jsonDict = json.loads(str(recipe))\n\
+    \        jsonDict[\"ingredients\"] = []\n        r = requests.post(self.links[2].format(self.get_url()),\
+    \ json=json.dumps(jsonDict))\n        if r.status_code != 400:\n            raise\
+    \ WrongAnswer(self.wrong_answers[20].format(self.links[0].format(\"POST /\"),\
+    \ 'title', r.status_code))\n\n    @dynamic_test(order=0)\n    def test0(self):\n\
+    \        ExitHandler.revert_exit()\n        print(\"Check created database\")\n\
+    \        asyncio.get_event_loop().run_until_complete(\n            self.test_database_structure())\n\
+    \        return CheckResult.correct()\n\n    @dynamic_test(order=1)\n    def test1(self):\n\
+    \        ExitHandler.revert_exit()\n        print(\"Get recipe by ingredients,\
+    \ no recipe added\")\n        asyncio.get_event_loop().run_until_complete(self.test_get_recipe_by_ingredients([self.list_recipes[0]],\
+    \ False, False))\n        return CheckResult.correct()\n\n    @dynamic_test(order=3)\n\
+    \    def test3(self):\n        ExitHandler.revert_exit()\n        print(\"Add\
+    \ invalid recipe\")\n        asyncio.get_event_loop().run_until_complete(self.test_post_invalid_recipe(self.list_recipes[0]))\n\
+    \        #asyncio.get_event_loop().run_until_complete(self.check_data_base(self.list_added_recipes))\n\
+    \        return CheckResult.correct()\n\n    @dynamic_test(order=4)\n    def test4(self):\n\
+    \        ExitHandler.revert_exit()\n        print(\"Add recipe\")\n        asyncio.get_event_loop().run_until_complete(self.test_post_recipe(self.list_recipes[0]))\n\
+    \        asyncio.get_event_loop().run_until_complete(self.check_data_base(self.list_added_recipes))\n\
+    \        return CheckResult.correct()\n\n    @dynamic_test(order=5)\n    def test5(self):\n\
+    \        ExitHandler.revert_exit()\n        print(\"Get recipe by added recipe\
+    \ ingredients\")\n        asyncio.get_event_loop().run_until_complete(self.test_get_recipe_by_ingredients([self.list_added_recipes[0]],\
+    \ True, True))\n        return CheckResult.correct()\n\n    @dynamic_test(order=6)\n\
+    \    def test6(self):\n        ExitHandler.revert_exit()\n        print(\"Get\
+    \ recipe by invalid recipe ingredients\")\n        asyncio.get_event_loop().run_until_complete(self.test_get_recipe_by_ingredients([self.list_recipes[1]],\
+    \ True, False))\n        return CheckResult.correct()\n\n    @dynamic_test(order=7)\n\
+    \    def test7(self):\n        ExitHandler.revert_exit()\n        print(\"Add\
+    \ secoond recipe\")\n        asyncio.get_event_loop().run_until_complete(self.test_post_recipe(self.list_recipes[3]))\n\
+    \        asyncio.get_event_loop().run_until_complete(self.check_data_base(self.list_added_recipes))\n\
+    \        return CheckResult.correct()\n\n    @dynamic_test(order=8)\n    def test8(self):\n\
+    \        ExitHandler.revert_exit()\n        print(\"Get recipe by second recipe\
+    \ ingredients\")\n        asyncio.get_event_loop().run_until_complete(self.test_get_recipe_by_ingredients([self.list_added_recipes[1]],\
+    \ True, True))\n        return CheckResult.correct()\n\n    @dynamic_test(order=9)\n\
+    \    def test9(self):\n        ExitHandler.revert_exit()\n        print(\"Get\
+    \ recipe by invalid recipe ingredients\")\n        asyncio.get_event_loop().run_until_complete(self.test_get_recipe_by_ingredients([self.list_recipes[4]],\
+    \ True, False))\n        return CheckResult.correct()\n\n    @dynamic_test(order=10)\n\
+    \    def test10(self):\n        ExitHandler.revert_exit()\n        print(\"Get\
+    \ recipe by invalid id\")\n        asyncio.get_event_loop().run_until_complete(self.test_get_recipe_by_id(99))\n\
+    \        return CheckResult.correct()\n\n    @dynamic_test(order=11)\n    def\
+    \ test11(self):\n        ExitHandler.revert_exit()\n        print(\"Get recipe,\
+    \ valid id, from added recipe\")\n        asyncio.get_event_loop().run_until_complete(self.test_get_recipe_by_id(self.list_added_recipes[0].id,\
+    \ True, self.list_added_recipes[0]))\n        return CheckResult.correct()\n\n\
+    \    @dynamic_test(order=12)\n    def test12(self):\n        ExitHandler.revert_exit()\n\
+    \        print(\"Get another recipe with valid id, from added recipe\")\n    \
+    \    asyncio.get_event_loop().run_until_complete(\n            self.test_get_recipe_by_id(self.list_added_recipes[1].id,\
+    \ True, self.list_added_recipes[1]))\n        return CheckResult.correct()\n\n\
+    \    @dynamic_test(order=13)\n    def test13(self):\n        ExitHandler.revert_exit()\n\
+    \        print(\"Delete recipe with valid id, from added recipe\")\n        asyncio.get_event_loop().run_until_complete(\n\
+    \            self.test_del_recipe_by_id(self.list_added_recipes[1].id, True, self.list_added_recipes[1]))\n\
+    \        asyncio.get_event_loop().run_until_complete(self.check_data_base(self.list_added_recipes))\n\
+    \        return CheckResult.correct()\n\n    id_deleted_recipe = 1\n    @dynamic_test(order=14)\n\
+    \    def test14(self):\n        ExitHandler.revert_exit()\n        print(\"Delete\
+    \ recipe, with added recipe id\")\n        self.id_deleted_recipe = self.list_added_recipes[0].id\n\
+    \        asyncio.get_event_loop().run_until_complete(\n            self.test_del_recipe_by_id(self.list_added_recipes[0].id,\
+    \ True))\n        return CheckResult.correct()\n\n    @dynamic_test(order=15)\n\
+    \    def test15(self):\n        ExitHandler.revert_exit()\n        print(\"Delete\
+    \ recipe, with deleted recipe id\")\n        asyncio.get_event_loop().run_until_complete(\n\
+    \            self.test_del_recipe_by_id(self.id_deleted_recipe, False))\n    \
+    \    return CheckResult.correct()\n\n\n\n\nif __name__ == '__main__':\n    try:\
+    \ os.remove(\"recipes.db\")\n    except: pass\n    FlaskProjectTest().run_tests()\n\
+    \    try: os.remove(\"recipes.db\")\n    except: pass\n"
+    learner_created: false
+  - name: tests.py
+    visible: false
+    text: |-
+      from test.tests import remove
+      
+      if __name__ == '__main__':    try: os.remove("recipes.db")    except: pass    FlaskProjectTest().run_tests()    try: os.remove("recipes.db")    except: pass
+    learner_created: false
+feedback_link: https://hyperskill.org/projects/215/stages/1079/implement#comment
+status: Unchecked
+record: -1
