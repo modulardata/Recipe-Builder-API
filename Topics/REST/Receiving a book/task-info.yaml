@@ -1,0 +1,25 @@
+type: choice
+is_multiple_choice: false
+options:
+  - text: POST /books/
+  - text: GIVE /books/4
+  - text: GET /books/4
+  - text: PUT /books/4
+  - text: ' DELETE /books/4'
+  - text: GIVE /books
+files:
+  - name: main.py
+    visible: true
+    text: |+
+      #  You can experiment here, it won’t be checked
+    
+    learner_created: false
+feedback_link: https://hyperskill.org/learn/step/7840#comment
+status: Solved
+feedback:
+  message: <html>Correct solution</html>
+  time: "Sat, 20 Apr 2024 12:51:00 UTC"
+record: -1
+selected_options:
+  - 2
+local_check: false

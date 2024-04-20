@@ -477,6 +477,6 @@ files:
       
       if __name__ == '__main__':    try: os.remove("recipes.db")    except: pass    FlaskProjectTest().run_tests()    try: os.remove("recipes.db")    except: pass
     learner_created: false
-feedback_link: https://hyperskill.org/projects/215/stages/1079/implement#comment
+feedback_link: https://hyperskill.org/learn/step/16550#comment
 status: Unchecked
 record: -1

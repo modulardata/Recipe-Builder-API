@@ -1,0 +1,23 @@
+type: choice
+is_multiple_choice: false
+options:
+  - text: 420
+  - text: 200
+  - text: 201
+  - text: 404
+files:
+  - name: main.py
+    visible: true
+    text: |+
+      #  You can experiment here, it won’t be checked
+    
+    learner_created: false
+feedback_link: https://hyperskill.org/learn/step/22666#comment
+status: Solved
+feedback:
+  message: <html>Correct solution</html>
+  time: "Sat, 20 Apr 2024 12:48:43 UTC"
+record: -1
+selected_options:
+  - 3
+local_check: false

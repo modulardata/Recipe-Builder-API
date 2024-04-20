@@ -1,0 +1,23 @@
+type: choice
+is_multiple_choice: false
+options:
+  - text: PUT articles/
+  - text: PUT articles/3
+  - text: POST articles
+  - text: POST articles/3
+files:
+  - name: main.py
+    visible: true
+    text: |+
+      #  You can experiment here, it won’t be checked
+    
+    learner_created: false
+feedback_link: https://hyperskill.org/learn/step/7838#comment
+status: Solved
+feedback:
+  message: <html>Correct solution</html>
+  time: "Sat, 20 Apr 2024 12:50:24 UTC"
+record: -1
+selected_options:
+  - 1
+local_check: false

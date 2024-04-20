@@ -478,6 +478,6 @@ files:
       
       if __name__ == '__main__':    FlaskProjectTest().run_tests()
     learner_created: false
-feedback_link: https://hyperskill.org/projects/215/stages/1078/implement#comment
+feedback_link: https://hyperskill.org/learn/step/16549#comment
 status: Unchecked
 record: -1
